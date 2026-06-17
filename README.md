@@ -63,7 +63,7 @@ Example:
 ```bash
 ./unrealeditor-window-splitter \
 /mnt/niko/Linux-Unreal/Unreal_My_Beloved/Linux_Unreal_Engine_5.6.1/Engine/Binaries/Linux/UnrealEditor \
-"/mnt/mainwindows/Users/niko_messerschmidt/Documents/Unreal Projects/An Unreal Rake Remaster/AnUnrealRakeRemaster.uproject"
+"/mnt/mainwindows/Users/niko_messerschmidt/Documents/Unreal Projects/Test proj 1/test_proj_1.uproject"
 ```
 
 ## Desktop entry usage
