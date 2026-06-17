@@ -111,4 +111,4 @@ It also listens for new windows through X11 events and applies the same logic wh
 
 Tested on UE 5.6.1, Plasma 6.6.5 and 7.0.11-arch1-1 (64-bit)
 
-i cant promise that it works on other versions tbh.. 
+i cant promise that it works on other versions.. 
