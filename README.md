@@ -92,7 +92,7 @@ What this does:
 - passes the project file (`%f`) into Unreal
 - keeps both running under one desktop entry
 
-This setup ensures the splitter is always active whenever Unreal starts from the launcher.
+This setup ensures the splitter is always active whenever Unreal starts from the .desktop file.
 
 ## How it works
 
