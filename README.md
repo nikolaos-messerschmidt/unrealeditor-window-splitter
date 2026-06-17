@@ -106,9 +106,12 @@ It also listens for new windows through X11 events and applies the same logic wh
 - Behaviour depends on KDE window management rules
 - Unreal Editor updates can change window behaviour
 - Experimental tool, expect edge cases
+- i have to admit i used ai for some parts because i was too lazy.. 😔😔😔😔
 
 ## Status
 
 Tested on UE 5.6.1, Plasma 6.6.5 and 7.0.11-arch1-1 (64-bit)
 
 i cant promise that it works on other versions.. 
+
+
