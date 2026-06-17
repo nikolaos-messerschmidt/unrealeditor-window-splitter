@@ -47,7 +47,7 @@ sudo zypper install libX11-devel
 ## Build
 
 ```bash
-gcc -o ue_pid_spoofer ue_pid_spoofer.c $(pkg-config --cflags --libs x11) -Wall
+gcc -o unrealeditor-window-splitter unrealeditor-window-splitter.c $(pkg-config --cflags --libs x11) -Wall
 ```
 
 ## Usage
