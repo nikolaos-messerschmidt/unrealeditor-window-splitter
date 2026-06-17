@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Unreal Editor
+Comment=Run Unreal Editor
+Exec=sh -c '/mnt/niko/Linux-Unreal/Unreal_My_Beloved/Linux_Unreal_Engine_5.6.1/unrealeditor-window-splitter & exec /mnt/niko/Linux-Unreal/Unreal_My_Beloved/Linux_Unreal_Engine_5.6.1/Engine/Binaries/Linux/UnrealEditor "$1"' sh %f
+Icon=/mnt/niko/Linux-Unreal/Unreal_My_Beloved/Linux_Unreal_Engine_5.6.1/unreal-engine.png
+Terminal=false
+Type=Application
+Categories=Application;
