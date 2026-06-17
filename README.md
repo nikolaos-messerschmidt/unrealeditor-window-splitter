@@ -4,7 +4,9 @@ This tool helps with Unreal Editor on KDE / X11 by separating editor sub-windows
 
 ## What it does
 
-Unreal Editor often creates multiple internal windows like panels, cameras, or editors that are attached to one main window. KDE tends to treat them as a single grouped application.
+Unreal Editor creates multiple internal windows that are attached to one main window. KDE tends to treat them as a single grouped application.
+
+(Funnily enough, this works natively on Windows.)
 
 This tool:
 
