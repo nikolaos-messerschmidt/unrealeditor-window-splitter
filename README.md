@@ -1,10 +1,10 @@
 # unreal-editor-window-splitter
 
-This tool helps with Unreal Engine on KDE / X11 by separating editor sub-windows that normally end up grouped under one main process. Those sub-windows then show up individually in the KDE taskbar instead of being hidden inside one entry.
+This tool helps with Unreal Editor on KDE / X11 by separating editor sub-windows that normally end up grouped under one main process. Those sub-windows then show up individually in the KDE taskbar instead of being hidden inside one entry.
 
 ## What it does
 
-Unreal Engine often creates multiple internal windows like panels, cameras, or editors that are attached to one main window. KDE tends to treat them as a single grouped application.
+Unreal Editor often creates multiple internal windows like panels, cameras, or editors that are attached to one main window. KDE tends to treat them as a single grouped application.
 
 This tool:
 
@@ -18,7 +18,7 @@ This tool:
 - Linux (X11 only, not Wayland)
 - Xlib development headers
 - KDE Plasma
-- Unreal Engine running on X11
+- Unreal Editor running on X11
 
 Install on Arch Linux:
 
@@ -80,7 +80,7 @@ It also listens for new windows through X11 events and applies the same logic wh
 
 - Only works on X11
 - Behaviour depends on KDE window management rules
-- Unreal Engine updates can change window behaviour
+- Unreal Editor updates can change window behaviour
 - Experimental tool, expect edge cases
 
 ## Status
