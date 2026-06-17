@@ -22,10 +22,32 @@ This tool:
 - KDE Plasma
 - Unreal Editor running on X11
 
-Install on Arch Linux:
-
+### Arch Linux
 ```bash
 sudo pacman -S libx11
+```
+
+### Debian / Ubuntu
+```bash
+sudo apt install libx11-dev
+```
+
+### Fedora
+```bash
+sudo dnf install libX11-devel
+```
+
+### openSUSE
+```bash
+sudo zypper install libX11-devel
+```
+
+---
+
+## Build
+
+```bash
+gcc -o ue_pid_spoofer ue_pid_spoofer.c $(pkg-config --cflags --libs x11) -Wall
 ```
 
 ## Usage
