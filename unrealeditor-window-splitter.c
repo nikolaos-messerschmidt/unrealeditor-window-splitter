@@ -12,6 +12,14 @@
 static Display *dpy;
 static Atom transient_atom;
 static Atom pid_atom;
+static Atom wm_state_atom;
+static Atom net_wm_state_atom;
+static Atom net_wm_state_skip_taskbar_atom;
+static Atom net_wm_state_hidden_atom;
+static Atom net_active_window_atom;
+
+static Window main_window = 0;
+static int main_was_iconic = 0;
 
 int x_error_handler(Display *d, XErrorEvent *e) {
     return 0;
@@ -40,6 +48,147 @@ int is_ue_window(Window win) {
     }
 
     return class_ok || name_ok;
+}
+
+int has_skip_taskbar(Window win) {
+    Atom type;
+    int format;
+    unsigned long nitems, bytes;
+    unsigned char *prop = NULL;
+
+    if (XGetWindowProperty(dpy, win, net_wm_state_atom,
+        0, 64, False, XA_ATOM,
+        &type, &format, &nitems, &bytes, &prop) != Success || !prop)
+        return 0;
+
+    int found = 0;
+    Atom *states = (Atom *)prop;
+    for (unsigned long i = 0; i < nitems; i++) {
+        if (states[i] == net_wm_state_skip_taskbar_atom) {
+            found = 1;
+            break;
+        }
+    }
+
+    XFree(prop);
+    return found;
+}
+
+int is_main_window(Window win) {
+    if (!is_ue_window(win)) return 0;
+
+    char *name = NULL;
+    int result = 0;
+
+    Atom utf8_atom = XInternAtom(dpy, "_NET_WM_NAME", False);
+    Atom utf8_string = XInternAtom(dpy, "UTF8_STRING", False);
+    Atom type;
+    int format;
+    unsigned long nitems, bytes;
+    unsigned char *prop = NULL;
+
+    if (XGetWindowProperty(dpy, win, utf8_atom,
+        0, 256, False, utf8_string,
+        &type, &format, &nitems, &bytes, &prop) == Success && prop && nitems > 0) {
+        name = strdup((char *)prop);
+        XFree(prop);
+    } else {
+        XFetchName(dpy, win, &name);
+    }
+
+    if (name) {
+        const char *suffix = "Unreal Editor";
+        size_t nlen = strlen(name);
+        size_t slen = strlen(suffix);
+        if (nlen >= slen && strcmp(name + nlen - slen, suffix) == 0)
+            result = 1;
+        free(name);
+    }
+
+    return result;
+}
+
+int is_sub_window(Window win) {
+    if (!is_ue_window(win)) return 0;
+    return !is_main_window(win);
+}
+
+int is_iconic(Window win) {
+    Atom type;
+    int format;
+    unsigned long nitems, bytes;
+    unsigned char *prop = NULL;
+
+    if (XGetWindowProperty(dpy, win, wm_state_atom,
+        0, 2, False, wm_state_atom,
+        &type, &format, &nitems, &bytes, &prop) != Success || !prop)
+        return 0;
+
+    unsigned long state = *(unsigned long *)prop;
+    XFree(prop);
+    return state == IconicState;
+}
+
+void minimize_all_sub_windows(Window root) {
+    Window r, p, *children;
+    unsigned int n;
+
+    if (!XQueryTree(dpy, root, &r, &p, &children, &n))
+        return;
+
+    for (unsigned int i = 0; i < n; i++) {
+        if (!is_ue_window(children[i])) continue;
+        if (children[i] == main_window) continue;
+        if (!is_sub_window(children[i])) continue;
+
+        XIconifyWindow(dpy, children[i], DefaultScreen(dpy));
+    }
+
+    XFlush(dpy);
+
+    if (children) XFree(children);
+}
+
+// Raise all UE sub-windows above main
+void raise_all_sub_windows(Window root) {
+    Window r, p, *children;
+    unsigned int n;
+
+    if (!XQueryTree(dpy, root, &r, &p, &children, &n))
+        return;
+
+    for (unsigned int i = 0; i < n; i++) {
+        if (!is_ue_window(children[i])) continue;
+        if (children[i] == main_window) continue;
+        if (!is_sub_window(children[i])) continue;
+
+        XRaiseWindow(dpy, children[i]);
+    }
+
+    XFlush(dpy);
+
+    if (children) XFree(children);
+}
+
+// Restore (map) all UE sub-windows
+void restore_all_sub_windows(Window root) {
+    Window r, p, *children;
+    unsigned int n;
+
+    if (!XQueryTree(dpy, root, &r, &p, &children, &n))
+        return;
+
+    for (unsigned int i = 0; i < n; i++) {
+        if (!is_ue_window(children[i])) continue;
+        if (children[i] == main_window) continue;
+        if (!is_sub_window(children[i])) continue;
+
+        XMapWindow(dpy, children[i]);
+    }
+
+    XFlush(dpy);
+
+    if (children) XFree(children);
 }
 
 int ue_still_alive(Window root) {
@@ -101,7 +250,13 @@ void process_window(Window win) {
     XDeleteProperty(dpy, win, transient_atom);
     XFlush(dpy);
 
-    //printf("Window split for: 0x%lx\n", win); //uncomment if you want to see when windows split :)
+    if (main_window == 0 && is_main_window(win)) {
+        main_window = win;
+        printf("Main window tracked: 0x%lx\n", main_window);
+
+        XSelectInput(dpy, main_window, PropertyChangeMask | StructureNotifyMask);
+    }
+
 }
 
 int scan_for_ue(Window win) {
@@ -137,8 +292,13 @@ int main() {
 
     Window root = DefaultRootWindow(dpy);
 
-    transient_atom = XInternAtom(dpy, "WM_TRANSIENT_FOR", False);
-    pid_atom = XInternAtom(dpy, "_NET_WM_PID", False);
+    transient_atom            = XInternAtom(dpy, "WM_TRANSIENT_FOR", False);
+    pid_atom                  = XInternAtom(dpy, "_NET_WM_PID", False);
+    wm_state_atom             = XInternAtom(dpy, "WM_STATE", False);
+    net_wm_state_atom         = XInternAtom(dpy, "_NET_WM_STATE", False);
+    net_wm_state_skip_taskbar_atom = XInternAtom(dpy, "_NET_WM_STATE_SKIP_TASKBAR", False);
+    net_wm_state_hidden_atom  = XInternAtom(dpy, "_NET_WM_STATE_HIDDEN", False);
+    net_active_window_atom    = XInternAtom(dpy, "_NET_ACTIVE_WINDOW", False);
 
     printf("Waiting for Editor \n");
 
@@ -176,20 +336,62 @@ int main() {
             break;
         }
 
+        if (main_window != 0) {
+            int iconic_now = is_iconic(main_window);
+
+            if (iconic_now && !main_was_iconic) {
+                printf("Main window minimized, hiding sub-windows...\n");
+                minimize_all_sub_windows(root);
+                main_was_iconic = 1;
+            } else if (!iconic_now && main_was_iconic) {
+                printf("Main window restored, showing sub-windows...\n");
+                restore_all_sub_windows(root);
+                main_was_iconic = 0;
+            }
+        }
+
         while (XPending(dpy)) {
             XEvent ev;
             XNextEvent(dpy, &ev);
 
-            Window win = 0;
+            if (ev.type == CreateNotify || ev.type == MapNotify) {
+                Window win = (ev.type == CreateNotify)
+                    ? ev.xcreatewindow.window
+                    : ev.xmap.window;
 
-            if (ev.type == CreateNotify)
-                win = ev.xcreatewindow.window;
-            else if (ev.type == MapNotify)
-                win = ev.xmap.window;
-            else
-                continue;
+                process_window(win);
 
-            process_window(win);
+                if (main_window == 0 && is_main_window(win)) {
+                    main_window = win;
+                    printf("Main window re-tracked: 0x%lx\n", main_window);
+                    XSelectInput(dpy, main_window, PropertyChangeMask);
+                }
+            }
+
+            else if (ev.type == ConfigureNotify) {
+                if (ev.xconfigure.window == main_window) {
+                    raise_all_sub_windows(root);
+                }
+            }
+
+            else if (ev.type == DestroyNotify) {
+                if (ev.xdestroywindow.window == main_window) {
+                    printf("Main window destroyed, resetting...\n");
+                    main_window = 0;
+                    main_was_iconic = 0;
+                }
+            }
+
+            else if (ev.type == ClientMessage) {
+                XClientMessageEvent *cm = (XClientMessageEvent *)&ev;
+                if (cm->message_type == net_active_window_atom) {
+                    Window requester = cm->window;
+                    if (is_sub_window(requester)) {
+                        printf("Blocked focus-steal from sub-window 0x%lx\n", requester);
+                        continue;
+                    }
+                }
+            }
         }
 
         usleep(50000);
@@ -199,4 +401,4 @@ int main() {
     return 0;
 }
 
-//Nikolaos Messerschmidt 17:15 17.06.26
+//Nikolaos Messerschmidt 22:19 18.06.26
